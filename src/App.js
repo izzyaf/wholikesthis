@@ -12,6 +12,7 @@ import Container from '@material-ui/core/Container';
 import LinearProgress from "@material-ui/core/LinearProgress";
 
 import findFans from "./findFans";
+import getPageID from "./getPageID";
 
 function Copyright() {
     return (
@@ -46,12 +47,13 @@ const useStyles = makeStyles(theme => ({
     },
 }));
 
-const handleSubmit = (persona, setProcessing, setData) => async e => {
+const handleSubmit = (url, persona, setProcessing, setData) => async e => {
     e.preventDefault();
 
     setProcessing(true);
 
-    const fans = await findFans(persona).finally(() => {
+    const pageId = await getPageID(url)
+    const fans = await findFans(pageId, persona).finally(() => {
         setProcessing(false)
     });
 
@@ -78,21 +80,21 @@ export default () => {
                     Find my fans
                 </Typography>
                 <form className={classes.form} noValidate onSubmit={handleSubmit(url, persona, setProcessing, setData)}>
-                    {/*<TextField*/}
-                    {/*    id="url"*/}
-                    {/*    name="url"*/}
-                    {/*    label="Page URL"*/}
-                    {/*    error={Boolean(formError['url'])}*/}
-                    {/*    helperText={formError['url']}*/}
-                    {/*    value={url}*/}
-                    {/*    onChange={e => setUrl(e.target.value)}*/}
-                    {/*    required*/}
-                    {/*    fullWidth*/}
-                    {/*    variant="outlined"*/}
-                    {/*    margin="normal"*/}
-                    {/*    autoComplete="url"*/}
-                    {/*    autoFocus*/}
-                    {/*/>*/}
+                    <TextField
+                        id="url"
+                        name="url"
+                        label="Page URL"
+                        error={Boolean(formError['url'])}
+                        helperText={formError['url']}
+                        value={url}
+                        onChange={e => setUrl(e.target.value)}
+                        required
+                        fullWidth
+                        variant="outlined"
+                        margin="normal"
+                        autoComplete="url"
+                        autoFocus
+                    />
                     <TextField
                         id="persona"
                         name="persona"

@@ -39,7 +39,7 @@ const process = async (key, pageId, offset, limit, cookie, fb_dtsg) => {
     return data
 };
 
-export default async (stringifiedPersona) => {
+export default async (pageId, stringifiedPersona) => {
     const offset = 0;
     const limit = 20;
     const persona = JSON.parse(stringifiedPersona);
@@ -47,6 +47,6 @@ export default async (stringifiedPersona) => {
     const keys = ['PEOPLE_WHO_LIKE_THIS_PAGE', 'PEOPLE_WHO_FOLLOW_THIS_PAGE', 'PAGES_THAT_LIKE_THIS_PAGE'];
 
     return Promise.all(keys.map(key =>
-        process(key, persona.pageId, offset, limit, personaToCookieString(persona.cookie), encodeURIComponent(persona.token))
+        process(key, pageId, offset, limit, personaToCookieString(persona.cookie), encodeURIComponent(persona.token))
     ));
 }
