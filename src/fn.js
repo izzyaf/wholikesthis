@@ -1,4 +1,4 @@
-const FACESCRAPER_API = process.env.FACESCRAPER_API || 'http://localhost:3333'
+const FACESCRAPER_API = process.env.REACT_APP_FACESCRAPER_API || 'http://localhost:3333'
 
 export const getPageID = async (url) => {
     const searchParams = new URLSearchParams({

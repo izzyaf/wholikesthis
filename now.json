@@ -1,0 +1,7 @@
+{
+  "build": {
+    "env": {
+      "REACT_APP_FACESCRAPER_API": "@facescraper_api"
+    }
+  }
+}
