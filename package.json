@@ -11,6 +11,7 @@
     "react": "^16.12.0",
     "react-dom": "^16.12.0",
     "react-scripts": "3.3.0",
+    "streamsaver": "^2.0.3",
     "typeface-roboto": "^0.0.75"
   },
   "resolutions": {

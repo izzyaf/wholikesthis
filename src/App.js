@@ -3,69 +3,81 @@ import Avatar from '@material-ui/core/Avatar';
 import Button from '@material-ui/core/Button';
 import CssBaseline from '@material-ui/core/CssBaseline';
 import TextField from '@material-ui/core/TextField';
-import Link from '@material-ui/core/Link';
 import Box from '@material-ui/core/Box';
 import PersonPinOutlinedIcon from '@material-ui/icons/PersonPinOutlined';
 import Typography from '@material-ui/core/Typography';
-import {makeStyles} from '@material-ui/core/styles';
 import Container from '@material-ui/core/Container';
 import LinearProgress from "@material-ui/core/LinearProgress";
 
-import findFans from "./findFans";
-import getPageID from "./getPageID";
+import {getPageFans, getPageID} from "./fn";
+import {useStyles} from "./styles";
+import {Copyright} from "./Copyright";
+import {Guide} from "./Guide";
+import {stringifyUser, writeToFile} from "./lib";
 
-function Copyright() {
-    return (
-        <Typography variant="body2" color="textSecondary" align="center">
-            {'Copyright © '}
-            <Link color="inherit" href="https://github.com/leminhph/wholikesthis">
-                leminhph
-            </Link>{' '}
-            {new Date().getFullYear()}
-            {'.'}
-        </Typography>
-    );
-}
-
-const useStyles = makeStyles(theme => ({
-    paper: {
-        marginTop: theme.spacing(8),
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-    },
-    avatar: {
-        margin: theme.spacing(1),
-        backgroundColor: theme.palette.secondary.main,
-    },
-    form: {
-        width: '100%', // Fix IE 11 issue.
-        marginTop: theme.spacing(1),
-    },
-    submit: {
-        margin: theme.spacing(3, 0, 2),
-    },
-}));
-
-const handleSubmit = (url, persona, setProcessing, setData) => async e => {
+const handleSubmit = (url, stringifiedPersona, setProcessing, setFanCount) => async e => {
     e.preventDefault();
+
+    const save = writeToFile('fans.csv')
+    const persona = JSON.parse(stringifiedPersona)
 
     setProcessing(true);
 
     const pageId = await getPageID(url)
-    const fans = await findFans(pageId, persona).finally(() => {
-        setProcessing(false)
-    });
 
-    console.log(fans)
+    let offset = 0
+    let limit = 1000
+    let exhausted = false
+    let currentFanCount = 0
+
+    while (!exhausted) {
+        try {
+            const fans = await getPageFans(pageId, limit, offset, persona.token, persona.cookie)
+
+            if (fans) {
+                const firstChunk = offset === 0
+
+                const receivedFanCount = Object.values(fans).reduce((totalLength, group) => {
+                    return totalLength + group.length
+                }, 0)
+                if (receivedFanCount === 0) {
+                    exhausted = true
+                }
+                currentFanCount += receivedFanCount
+                setFanCount(currentFanCount)
+
+                let content = Object.entries(fans).reduce((rows, [type, users]) => {
+                    const row = users.map(user => stringifyUser(type, user)).join('\n')
+
+                    return rows + row + '\n'
+                }, '') + '\n'
+
+                if (content) {
+                    if (firstChunk) {
+                        content = "\uFEFF" + content // BOM
+                    }
+                }
+
+                await save(content, exhausted)
+
+                offset += limit
+            }
+        } catch (e) {
+            console.error(e)
+            break
+        }
+    }
+
+    setProcessing(false)
 }
 
 export default () => {
-    const [formError, setFormError] = React.useState({})
+    const [formError] = React.useState({})
     const [url, setUrl] = React.useState('')
     const [persona, setPersona] = React.useState('')
+    const [fanCount, setFanCount] = React.useState(null)
     const [processing, setProcessing] = React.useState(false)
-    const [data, setData] = React.useState([]);
+    const [showGuide, setShowGuide] = React.useState(false)
 
     const classes = useStyles();
 
@@ -79,7 +91,16 @@ export default () => {
                 <Typography component="h1" variant="h5">
                     Find my fans
                 </Typography>
-                <form className={classes.form} noValidate onSubmit={handleSubmit(url, persona, setProcessing, setData)}>
+                <Button className={classes.showGuideButton} variant="outlined" color="primary"
+                        onClick={() => setShowGuide(true)}>
+                    How to use?
+                </Button>
+                <Guide open={showGuide} onClose={() => setShowGuide(false)}/>
+                <form className={classes.form} noValidate
+                      onSubmit={e => {
+                          setFanCount(null)
+                          handleSubmit(url, persona, setProcessing, setFanCount)(e)
+                      }}>
                     <TextField
                         id="url"
                         name="url"
@@ -117,22 +138,14 @@ export default () => {
                         variant="contained"
                         color="primary"
                         className={classes.submit}
+                        disabled={processing}
                     >
                         Find them!
                     </Button>
                     {processing && <LinearProgress/>}
-                    {/*<Grid container>*/}
-                    {/*    <Grid item xs>*/}
-                    {/*        <Link href="#" variant="body2">*/}
-                    {/*            Forgot password?*/}
-                    {/*        </Link>*/}
-                    {/*    </Grid>*/}
-                    {/*    <Grid item>*/}
-                    {/*        <Link href="#" variant="body2">*/}
-                    {/*            {"Don't have an account? Sign Up"}*/}
-                    {/*        </Link>*/}
-                    {/*    </Grid>*/}
-                    {/*</Grid>*/}
+                    {fanCount !== null && <Typography className={classes.fanCount} align="center" component="div">
+                        Found <Box display="inline" fontWeight="fontWeightBold">{fanCount}</Box> fans
+                    </Typography>}
                 </form>
             </div>
             <Box mt={8}>
